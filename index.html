@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tra cứu thời khóa biểu · MSSV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#fdf6ea;
+    --paper-dot:#e8dcc4;
+    --panel:#ffffff;
+    --panel-2:#fffaf0;
+    --ink:#2b2b2b;
+    --text:#2b2b2b;
+    --text-dim:#6b6558;
+    --text-faint:#a39d8c;
+    --mint:#8fd9ae;
+    --mint-dark:#3f9c6c;
+    --coral:#f79489;
+    --coral-dark:#d85c50;
+    --sky:#8ec9f0;
+    --sky-dark:#3a86c8;
+    --peach:#ffcf86;
+    --peach-dark:#d99b2b;
+    --rose:#ffb4c6;
+    --rose-dark:#e0678a;
+    --green:#3f9c6c;
+    --red:#d85c50;
+    --pink:#e0678a;
+    --blue:#3a86c8;
+    --code-navy:#232b3d;
+    --code-text:#e8eef7;
+    --radius:16px;
+    /* Alias tương thích ngược cho các rule cũ chưa đổi tên biến bên dưới */
+    --divider:#e3d5b0;
+    --bg-2:#f6efdf;
+    --ridge:#fff8ec;
+    --amber:var(--sky-dark);
+    --amber-dim:var(--sky);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(var(--paper-dot) 1.2px, transparent 1.2px) 0 0/22px 22px,
+      var(--paper);
+    color:var(--text);
+    font-family:'Be Vietnam Pro', sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'JetBrains Mono', monospace; font-variant-numeric:tabular-nums;}
+  a{color:inherit;}
+  ::selection{background:var(--rose); color:#2b2b2b;}
+
+  .page-frame{
+    max-width:920px; margin:18px auto; padding:22px;
+    border:2px dashed var(--ink);
+    border-radius:22px;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:10px 8px 60px;}
+
+  /* Thẻ kiểu sticker: viền đen dày + đổ bóng lệch — dùng chung cho mọi khối nội dung */
+  .sheet-card{
+    position:relative;
+    border:2px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--panel);
+    box-shadow:4px 4px 0 var(--ink);
+    margin-bottom:20px;
+    overflow:hidden;
+  }
+  .sheet-head{
+    display:flex; align-items:center; gap:10px;
+    padding:10px 16px;
+    border-bottom:2px solid var(--ink);
+    font-weight:800; font-size:14.5px;
+    color:#1c1c1c;
+  }
+  .sheet-head .num{
+    width:24px; height:24px; border-radius:50%;
+    background:#fff; border:2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; flex:none;
+  }
+  .sheet-head .emoji{font-size:16px;}
+  .sheet-body{padding:16px;}
+  .sheet-head.mint{background:var(--mint);}
+  .sheet-head.coral{background:var(--coral);}
+  .sheet-head.sky{background:var(--sky);}
+  .sheet-head.peach{background:var(--peach);}
+  .sheet-head.rose{background:var(--rose);}
+
+  /* ---------- Header / hero ---------- */
+  .hero{
+    position:relative;
+    border:2px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--panel-2);
+    box-shadow:4px 4px 0 var(--ink);
+    padding:34px 24px 24px;
+    overflow:visible;
+    text-align:center;
+  }
+  .hero-badge{
+    position:absolute; top:-16px; left:22px;
+    background:var(--peach);
+    border:2px solid var(--ink);
+    border-radius:12px;
+    padding:6px 12px;
+    font-weight:800; font-size:12px;
+    transform:rotate(-6deg);
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .hero-spark{position:absolute; top:14px; right:20px; font-size:20px;}
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .eyebrow .dot{width:6px; height:6px; border-radius:50%; background:var(--mint-dark); box-shadow:0 0 6px var(--mint-dark);}
+  h1{
+    font-size:clamp(24px, 5vw, 34px);
+    line-height:1.2;
+    letter-spacing:-0.01em;
+    font-weight:800;
+    margin:10px 0 10px;
+  }
+  h1 .flip{
+    display:inline-block;
+    font-family:'JetBrains Mono', monospace;
+    background:var(--rose);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:1px 12px;
+    margin:0 2px;
+    box-shadow:2px 2px 0 var(--ink);
+    color:#1c1c1c;
+  }
+  h1 .flip:nth-of-type(2){background:var(--sky);}
+  .hero .tagline{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--sky);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:6px 16px;
+    font-size:12.5px; font-weight:700;
+    color:#1c1c1c;
+    margin:2px 0 10px;
+  }
+  .hero p.sub{color:var(--text-dim); font-size:13.5px; margin:0 auto; max-width:52ch;}
+
+  /* ---------- Status strip ---------- */
+  .status-strip{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-top:18px;
+  }
+  .chip{
+    display:flex; align-items:center; gap:7px;
+    font-size:12.5px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:2px solid var(--ink);
+    background:#fff;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .chip b{color:var(--text); font-weight:800;}
+  .chip .led{width:7px; height:7px; border-radius:50%; background:var(--text-faint); flex:none;}
+  .chip.ok{background:var(--mint);}
+  .chip.ok .led{background:var(--mint-dark); box-shadow:0 0 6px var(--mint-dark);}
+  .chip.warn{background:var(--peach);}
+  .chip.warn .led{background:var(--peach-dark); box-shadow:0 0 6px var(--peach-dark);}
+
+  /* ---------- Setup panel ---------- */
+  .panel{
+    margin-top:16px;
+    border:1px solid var(--divider);
+    border-radius:var(--radius);
+    background:var(--panel);
+    overflow:hidden;
+  }
+  .panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .panel-head h2{font-size:14px; margin:0; font-weight:700; letter-spacing:.01em;}
+  .panel-head .hint{font-size:12px; color:var(--text-faint); font-weight:500;}
+  .chevron{transition:transform .2s ease; color:var(--text-faint); flex:none;}
+  .panel.open .chevron{transform:rotate(180deg);}
+  .panel-body{
+    display:none;
+    padding:0 18px 20px;
+    border-top:1px solid var(--divider);
+  }
+  .panel.open .panel-body{display:block; padding-top:16px;}
+  /* Dữ liệu giờ tự nạp từ /data khi mở trang — ẩn hẳn panel nạp file thủ công.
+     Vẫn giữ nguyên DOM/JS bên trong để không vỡ code, chỉ ẩn bằng CSS. */
+  #setupPanel{display:none;}
+
+  .step{
+    display:grid;
+    grid-template-columns:28px 1fr;
+    gap:12px;
+    padding:14px 0;
+    border-top:1px dashed var(--divider);
+  }
+  .step:first-child{border-top:none; padding-top:2px;}
+  .step-num{
+    width:26px; height:26px; border-radius:6px;
+    background:var(--bg-2); border:1px solid var(--divider);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--amber);
+    flex:none;
+  }
+  .step h3{margin:0 0 4px; font-size:14px; font-weight:600;}
+  .step p{margin:0 0 10px; font-size:13px; color:var(--text-dim); line-height:1.5;}
+  .filebtn{
+    display:inline-flex; align-items:center; gap:8px;
+    background:var(--bg-2);
+    border:1px solid var(--divider);
+    color:var(--text);
+    padding:9px 14px;
+    border-radius:7px;
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .filebtn:hover{border-color:var(--amber-dim); background:var(--panel-2);}
+  .filebtn input{display:none;}
+  .filebtn svg{flex:none;}
+  .file-result{
+    margin-top:8px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    font-family:'JetBrains Mono', monospace;
+  }
+  .file-result.ok{color:var(--green);}
+  .file-result.err{color:var(--red);}
+  .progress{
+    margin-top:8px; height:4px; border-radius:2px; background:var(--bg-2);
+    overflow:hidden; display:none;
+  }
+  .progress.on{display:block;}
+  .progress-bar{height:100%; width:0%; background:var(--amber); transition:width .15s linear;}
+
+  /* ---------- Search ---------- */
+  .search-card{
+    margin-top:0;
+    border:2px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--panel);
+    box-shadow:4px 4px 0 var(--ink);
+    padding:0;
+    overflow:hidden;
+  }
+  .search-row{display:flex; gap:10px; padding:16px;}
+  .search-row input{
+    flex:1;
+    background:var(--code-navy);
+    border:2px solid var(--ink);
+    color:var(--code-text);
+    font-family:'JetBrains Mono', monospace;
+    font-size:20px;
+    letter-spacing:.04em;
+    padding:13px 16px;
+    border-radius:8px;
+    outline:none;
+    min-width:0;
+  }
+  .search-row input::placeholder{color:#8b94a8; letter-spacing:0; font-size:14px;}
+  .search-row input:focus{border-color:var(--sky); box-shadow:0 0 0 3px rgba(142,201,240,.35);}
+  .search-row button{
+    background:var(--coral);
+    color:#1c1c1c;
+    border:2px solid var(--ink);
+    font-family:'Be Vietnam Pro', sans-serif;
+    font-weight:800;
+    font-size:14px;
+    padding:0 22px;
+    border-radius:8px;
+    cursor:pointer;
+    transition:transform .1s;
+    flex:none;
+    box-shadow:3px 3px 0 var(--ink);
+  }
+  .search-row button:hover{filter:brightness(1.05);}
+  .search-row button:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+  .search-row button:disabled{opacity:.4; cursor:not-allowed;}
+  .search-note{margin:10px 14px 12px; font-size:12px; color:var(--text-faint);}
+
+  /* ---------- Result ---------- */
+  #result{margin-top:22px;}
+  .empty-msg{
+    text-align:center; padding:40px 20px; color:var(--text-faint); font-size:13.5px;
+  }
+  .msg-board{
+    border:2px solid var(--ink); border-radius:var(--radius);
+    background:var(--rose); padding:20px; text-align:center;
+    color:#7a1f36; font-family:'JetBrains Mono', monospace; font-size:14px;
+    box-shadow:4px 4px 0 var(--ink); font-weight:700;
+  }
+
+  .student-card{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    flex-wrap:wrap;
+    border:2px solid var(--ink);
+    border-radius:var(--radius);
+    background:var(--mint);
+    box-shadow:4px 4px 0 var(--ink);
+    padding:16px 18px;
+    margin-bottom:18px;
+  }
+  .student-card .name{font-size:18px; font-weight:700;}
+  .student-card .meta{font-size:12.5px; color:var(--text-dim); margin-top:3px; font-family:'JetBrains Mono', monospace;}
+  .student-card .count{
+    text-align:center; padding:6px 14px; border-radius:8px;
+    background:#fff; border:2px solid var(--ink);
+  }
+  .student-card .count b{display:block; font-size:20px; color:#1c1c1c; font-family:'JetBrains Mono', monospace;}
+  .student-card .count span{font-size:10px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase;}
+
+  .day-group{margin-bottom:14px;}
+  .day-label{
+    display:flex; align-items:center; gap:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--coral-dark); font-weight:700;
+    margin:0 0 8px 2px;
+  }
+  .day-label::after{content:""; flex:1; height:2px; background:var(--ink); opacity:.15;}
+
+  .board-row{
+    display:grid;
+    grid-template-columns:64px 1fr auto;
+    gap:14px;
+    align-items:center;
+    border:2px solid var(--ink);
+    border-radius:10px;
+    background:var(--panel);
+    box-shadow:3px 3px 0 var(--ink);
+    padding:12px 14px;
+    margin-bottom:10px;
+    opacity:0;
+    transform:rotateX(-12deg) translateY(-4px);
+    transform-origin:top center;
+    animation:flapIn .38s ease forwards;
+  }
+  @keyframes flapIn{
+    to{opacity:1; transform:rotateX(0deg) translateY(0);}
+  }
+  .period{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px; color:#1c1c1c; font-weight:700;
+    background:var(--peach);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:6px 4px;
+    text-align:center;
+    line-height:1.25;
+  }
+  .period small{display:block; color:#5c4a1e; font-size:9px; letter-spacing:.08em; margin-top:1px; font-weight:600;}
+  .course-name{font-size:14.5px; font-weight:700; line-height:1.3;}
+  .course-sub{
+    font-size:12px; color:var(--text-dim); margin-top:3px;
+    font-family:'JetBrains Mono', monospace;
+    display:flex; flex-wrap:wrap; gap:4px 10px;
+  }
+  .course-sub span{white-space:nowrap;}
+  .room-badge{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px; font-weight:700;
+    background:var(--sky);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:6px 10px;
+    color:#1c1c1c;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .flex-section{margin-top:0;}
+  .flex-title{
+    font-size:13px; font-weight:800; color:var(--text-dim);
+    text-transform:uppercase; letter-spacing:.06em;
+    margin:0 0 12px 2px;
+  }
+  .flex-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    border:2px solid var(--ink); border-radius:10px;
+    background:var(--panel);
+    box-shadow:3px 3px 0 var(--ink);
+    padding:11px 14px; margin-bottom:10px;
+    font-size:13px;
+  }
+  .flex-row .left b{font-weight:700;}
+  .flex-row .left .mono{color:var(--text-dim); font-size:11.5px; display:block; margin-top:2px;}
+  .flex-row .right{color:var(--text-faint); font-size:11.5px; font-family:'JetBrains Mono', monospace; text-align:right; white-space:nowrap;}
+
+  /* ---------- Week nav ---------- */
+  .week-nav{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  .week-nav select{
+    background:#fff; border:2px solid var(--ink); color:var(--text);
+    font-family:'JetBrains Mono', monospace; font-size:12.5px;
+    padding:7px 10px; border-radius:7px; outline:none; max-width:260px; font-weight:600;
+  }
+  .week-nav button{
+    background:#fff; border:2px solid var(--ink); color:var(--text-dim);
+    font-family:'Be Vietnam Pro', sans-serif; font-size:12.5px; font-weight:700;
+    padding:7px 13px; border-radius:7px; cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+  }
+  .week-nav button:hover:not(:disabled){color:var(--text);}
+  .week-nav button:active:not(:disabled){transform:translate(2px,2px); box-shadow:none;}
+  .week-nav button:disabled{opacity:.35; cursor:not-allowed; box-shadow:none;}
+  .week-nav button.active{background:var(--rose); color:#1c1c1c; border-color:var(--ink);}
+
+  /* ---------- Weekly grid ---------- */
+  .view-toggle{display:flex; gap:8px; margin-bottom:14px;}
+  .view-toggle button{
+    font-family:'Be Vietnam Pro', sans-serif; font-size:12.5px; font-weight:600;
+    background:var(--bg-2); border:1px solid var(--divider); color:var(--text-dim);
+    padding:7px 13px; border-radius:7px; cursor:pointer;
+  }
+  .view-toggle button.active{background:var(--amber); color:#fff; border-color:var(--amber);}
+
+  .week-wrap{
+    border:2px solid var(--ink); border-radius:var(--radius);
+    background:var(--panel); box-shadow:4px 4px 0 var(--ink);
+    padding:14px; overflow-x:auto; margin-bottom:18px;
+  }
+  .week-grid{display:grid; grid-template-columns:56px repeat(7, minmax(96px,1fr)); min-width:780px;}
+  .week-corner, .week-daycell{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-dim); text-align:center; padding:6px 2px 10px; border-bottom:2px solid var(--ink);
+  }
+  .week-daycell b{display:block; color:var(--text); font-size:15px; font-family:'Be Vietnam Pro', sans-serif; font-weight:700;}
+  .week-daycell .wd{display:block; margin-top:2px;}
+  .week-daycell.today{color:var(--coral-dark);}
+  .week-daycell.today b{color:var(--coral-dark);}
+  .week-timecol{display:flex; flex-direction:column;}
+  .week-timecell{
+    height:52px; font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-faint);
+    text-align:right; padding:2px 8px 0 0; border-top:1px dashed var(--divider);
+    display:flex; flex-direction:column; justify-content:flex-start;
+  }
+  .week-timecell b{display:block; font-size:11px; color:var(--text-dim); font-weight:600;}
+  .week-daycol{position:relative; border-left:1px solid var(--divider); height:calc(52px * 14);}
+  .week-daycol .gridline{position:absolute; left:0; right:0; height:0; border-top:1px dashed var(--divider);}
+  .course-block{
+    position:absolute; border-radius:7px; padding:6px 7px; overflow:hidden;
+    font-size:11px; line-height:1.3; color:#1c1c1c; cursor:default;
+    box-shadow:2px 2px 0 rgba(0,0,0,.5);
+    border:2px solid var(--ink);
+  }
+  .course-block .cb-name{font-weight:800; font-size:11.5px; display:block; white-space:normal;}
+  .course-block .cb-meta{display:block; font-size:9.5px; opacity:.85; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;}
+
+  .legend{display:flex; flex-wrap:wrap; gap:8px 14px; margin:2px 2px 18px;}
+  .legend-item{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim); font-weight:600;}
+  .legend-swatch{width:12px; height:12px; border-radius:3px; flex:none; border:2px solid var(--ink);}
+
+  footer{
+    text-align:center; margin-top:30px; font-size:11.5px; color:var(--text-dim);
+    display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600;
+  }
+
+  @media (max-width:520px){
+    .wrap{padding:8px 4px 60px;}
+    .page-frame{margin:10px; padding:14px;}
+    .hero{padding:26px 16px 18px;}
+    .board-row{grid-template-columns:52px 1fr; row-gap:8px;}
+    .board-row .room-badge{grid-column:1/-1; justify-self:start;}
+    .student-card{padding:14px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .board-row{animation:none; opacity:1; transform:none;}
+  }
+</style>
+</head>
+<body>
+<div class="page-frame">
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-badge">HK1 · 26-27</div>
+    <span class="hero-spark">✨</span>
+    <div class="eyebrow"><span class="dot"></span> UTC2 </div>
+    <h1>Tra cứu <span class="flip">TKB</span> theo <span class="flip">MSSV</span></h1>
+    <div class="tagline">📌 Gõ MSSV là ra lịch, khỏi lục file</div>
+    <p class="sub">Dữ liệu tự nạp sẵn chờ xíu chỉ cần gõ mã số sinh viên để xem lịch học theo tuần.</p>
+
+    <div class="status-strip">
+      <div class="chip" id="chip-tkb"><span class="led"></span> TKB: <b>đang nạp</b></div>
+      <div class="chip" id="chip-ds"><span class="led"></span> Danh sách lớp: <b>đang nạp</b></div>
+    </div>
+  </div>
+
+  <div class="panel open" id="setupPanel">
+    <div class="panel-head" id="setupHead">
+      <div>
+        <h2>Nạp dữ liệu</h2>
+        <div class="hint" id="setupHint">Cần 2 loại file bên dưới trước khi tra cứu</div>
+      </div>
+      <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="panel-body">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>File thời khóa biểu tổng (TKB)</h3>
+          <p>File <span class="mono">"TKB HKI NH 26-27 (CHÍNH THỨC)....xls"</span> — chứa toàn bộ lớp học phần, thứ, tiết, phòng, giáo viên.</p>
+          <label class="filebtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Chọn file TKB (.xls/.xlsx)
+            <input type="file" id="tkbFile" accept=".xls,.xlsx">
+          </label>
+          <div class="file-result" id="tkbResult"></div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>Danh sách lớp học phần (từ file .rar)</h3>
+          <p>Giải nén file <span class="mono">"DS lớp HP....rar"</span> ra một thư mục, rồi chọn nguyên thư mục đó — app tự đọc hết các file bên trong (mỗi sheet là danh sách MSSV của 1 lớp học phần, khớp với TKB tổng qua đúng chuỗi <span class="mono">"Lớp học phần:"</span> — không dùng Mã HP vì 1 Mã HP có thể có nhiều lớp song song).</p>
+          <label class="filebtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            Chọn thư mục danh sách lớp
+            <input type="file" id="folderInput" webkitdirectory directory multiple>
+          </label>
+          <label class="filebtn" style="margin-left:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            hoặc chọn nhiều file lẻ
+            <input type="file" id="multiFileInput" accept=".xls,.xlsx" multiple>
+          </label>
+          <div class="progress" id="dsProgress"><div class="progress-bar" id="dsProgressBar"></div></div>
+          <div class="file-result" id="dsResult"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="search-card">
+    <div class="sheet-head sky"><span class="num">1</span><span class="emoji">🔍</span> TRA CỨU MSSV</div>
+    <form id="searchForm" class="search-row">
+      <input type="text" id="mssvInput" class="mono" placeholder="Nhập MSSV ở đây nếu chưa bấm tra cứu được tức là chưa nạp xong" autocomplete="off" inputmode="numeric">
+      <button type="submit" id="searchBtn">Tra cứu</button>
+    </form>
+    <div class="search-note" id="searchNote">Nạp đủ dữ liệu ở trên rồi mới tra cứu được.</div>
+  </div>
+
+  <div id="result"></div>
+
+  <footer><span>⭐</span> Dữ liệu chỉ nằm trong bộ nhớ trình duyệt của bạn — tải lại trang là mất, cần thì nạp lại file. <span>⭐</span></footer>
+</div>
+</div>
+
+
+<script>
+// ---------------------------------------------------------------
+// State
+// ---------------------------------------------------------------
+let tkbMap = {};          // lopHocPhan (chuỗi đầy đủ, khớp chính xác) -> [ {maHP, tenMon, lopHocPhan, soTC, thu, tietStr, tietStart, tietEnd, soTiet, phong, ngayBD, ngayKT, gv, nhom, soSV}, ... ]
+                           // 1 lớp học phần có thể có NHIỀU dòng (nhiều buổi/tuần) nên value luôn là mảng.
+let studentIndex = {};    // mssv -> {hoTen, lop, lopHocPhans:Set}  -- khóa nối là "Lớp học phần" (chuỗi đầy đủ), không phải Mã HP
+let tkbLoaded = false;
+let dsFileCount = 0;
+let dsSheetHits = 0;
+
+const THU_LABEL = {2:'Thứ 2', 3:'Thứ 3', 4:'Thứ 4', 5:'Thứ 5', 6:'Thứ 6', 7:'Thứ 7', 8:'Chủ nhật'};
+const DAY_ORDER = [2,3,4,5,6,7,8];
+
+// Bảng tiết học -> giờ (theo ảnh mẫu)
+const TIET_TIME = {
+  1:['7h00','7h50'], 2:['7h55','8h45'], 3:['8h50','9h40'], 4:['9h50','10h40'], 5:['10h45','11h35'],
+  6:['13h00','13h50'], 7:['13h55','14h45'], 8:['14h55','15h45'], 9:['15h50','16h40'], 10:['16h45','17h35'],
+  11:['18h00','18h50'], 12:['18h55','19h45'], 13:['19h55','20h45'], 14:['20h50','21h40']
+};
+const ROW_H = 52; // px mỗi tiết trong lưới tuần
+
+const PALETTE = [
+  '#6c7ee1','#f179b8','#f0bd74','#70c2b4','#c688eb',
+  '#fba2d0','#92b9e3','#956ad6','#ffc4a4','#e8548a',
+  '#8fd6c9','#b8a8ec','#f5cf94','#84a0ea','#e79fd6','#5fc6e0'
+];
+let subjectColorMap = new Map();
+function colorForSubject(name){
+  if(!subjectColorMap.has(name)){
+    subjectColorMap.set(name, PALETTE[subjectColorMap.size % PALETTE.length]);
+  }
+  return subjectColorMap.get(name);
+}
+
+// ---------------------------------------------------------------
+// Danh sách tuần: Tuần 1 = 24/08/2026 (Thứ 2) -> 30/08/2026 (Chủ nhật), ... tới hết 01/01/2027
+// ---------------------------------------------------------------
+const SEMESTER_START = new Date(2026, 7, 24);  // 24/08/2026, đã là Thứ 2
+const SEMESTER_END   = new Date(2027, 0, 1);   // 01/01/2027
+function buildWeeks(){
+  const weeks = [];
+  let cur = new Date(SEMESTER_START);
+  let n = 1;
+  while(cur <= SEMESTER_END){
+    const start = new Date(cur);
+    const end = new Date(cur); end.setDate(end.getDate()+6);
+    weeks.push({n, start, end});
+    cur.setDate(cur.getDate()+7);
+    n++;
+  }
+  return weeks;
+}
+const WEEKS = buildWeeks();
+
+function fmtShort(d){
+  return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
+}
+function weekLabel(w){
+  return 'Tuần ' + w.n + ' · ' + fmtShort(w.start) + ' → ' + fmtShort(w.end);
+}
+function defaultWeekIndex(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  for(let i=0;i<WEEKS.length;i++){
+    if(today >= WEEKS[i].start && today <= WEEKS[i].end) return i;
+  }
+  if(today < SEMESTER_START) return 0;
+  return WEEKS.length-1;
+}
+let currentWeekIdx = defaultWeekIndex();
+let lastMssv = null;
+
+// Excel date -> Date thuần (bỏ giờ), dùng để so khớp với tuần
+function toDateOnly(d){
+  if(d instanceof Date && !isNaN(d)) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return null;
+}
+
+// ---------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------
+function readFileAsArrayBuffer(file){
+  return new Promise((resolve, reject)=>{
+    const r = new FileReader();
+    r.onload = ()=> resolve(r.result);
+    r.onerror = ()=> reject(r.error);
+    r.readAsArrayBuffer(file);
+  });
+}
+
+function normHeader(v){ return String(v==null?'':v).trim(); }
+
+function fmtDate(d){
+  if(d instanceof Date && !isNaN(d)) return d.toLocaleDateString('vi-VN');
+  if(!d) return '';
+  return String(d);
+}
+
+function extractSubject(lopHocPhan){
+  if(!lopHocPhan) return '';
+  const m = String(lopHocPhan).match(/^(.*?)-([12])-(\d{1,2})-/);
+  return m ? m[1].trim() : String(lopHocPhan);
+}
+
+function setChip(id, ok, text){
+  const el = document.getElementById(id);
+  el.classList.toggle('ok', ok);
+  el.classList.toggle('warn', !ok);
+  el.querySelector('b').textContent = text;
+}
+
+// ---------------------------------------------------------------
+// Parse TKB workbook
+// ---------------------------------------------------------------
+async function handleTKBFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const data = await readFileAsArrayBuffer(file);
+  await loadTKBFromArrayBuffer(data, file.name);
+}
+
+// Dùng chung cho cả upload thủ công (input file) lẫn tự nạp từ /data (fetch)
+async function loadTKBFromArrayBuffer(data, label){
+  const resultEl = document.getElementById('tkbResult');
+  resultEl.className = 'file-result';
+  resultEl.textContent = 'Đang đọc ' + label + ' ...';
+  try{
+    const wb = XLSX.read(data, {type:'array', cellDates:true});
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:''});
+
+    let headerIdx = -1;
+    for(let i=0;i<rows.length;i++){
+      if(rows[i].some(c => normHeader(c) === 'Mã HP')){ headerIdx = i; break; }
+    }
+    if(headerIdx === -1) throw new Error('Không tìm thấy dòng tiêu đề "Mã HP" trong file.');
+
+    const header = rows[headerIdx].map(normHeader);
+    const col = name => header.indexOf(name);
+    const idx = {
+      maHP: col('Mã HP'), soTC: col('Số TC'), lop: col('Lớp học phần'),
+      soSV: col('Số SV TT'), thu: col('Thứ'), tiet: col('Tiết học'),
+      soTiet: col('Số tiết'), phong: col('Phòng học'), ngayBD: col('Ngày BĐ'),
+      ngayKT: col('Ngày KT'), gv: col('Giáo Viên'), nhom: col('Nhóm kiểm soát')
+    };
+    if(idx.maHP === -1) throw new Error('Thiếu cột "Mã HP".');
+
+    tkbMap = {};
+    let count = 0;      // số dòng (buổi học) đã đọc
+    let lopCount = 0;   // số lớp học phần (khóa) duy nhất
+    for(let i=headerIdx+1;i<rows.length;i++){
+      const r = rows[i];
+      const maHP = normHeader(r[idx.maHP]);
+      const lopHocPhan = normHeader(r[idx.lop]);
+      if(!lopHocPhan) continue;   // khóa nối là "Lớp học phần" — bắt buộc phải có
+      const tietStr = normHeader(r[idx.tiet]);
+      const [ts, te] = tietStr.split('->').map(s=>s.trim());
+      const thuRaw = r[idx.thu];
+      const thu = (thuRaw===''||thuRaw==null) ? null : Math.round(Number(thuRaw));
+
+      const session = {
+        maHP,
+        lopHocPhan,
+        tenMon: extractSubject(lopHocPhan),
+        soTC: r[idx.soTC],
+        soSV: r[idx.soSV],
+        thu,
+        tietStart: ts ? Number(ts) : null,
+        tietEnd: te ? Number(te) : null,
+        soTiet: r[idx.soTiet],
+        phong: normHeader(r[idx.phong]),
+        ngayBD: fmtDate(r[idx.ngayBD]),
+        ngayKT: fmtDate(r[idx.ngayKT]),
+        ngayBD_raw: toDateOnly(r[idx.ngayBD]),
+        ngayKT_raw: toDateOnly(r[idx.ngayKT]),
+        gv: normHeader(r[idx.gv]),
+        nhom: normHeader(r[idx.nhom]),
+      };
+      // Mỗi "Lớp học phần" có thể học nhiều buổi/tuần -> gom thành mảng các buổi,
+      // KHÔNG ghi đè như trước (đã từng key theo Mã HP nên bị mất dữ liệu các lớp song song).
+      if(!tkbMap[lopHocPhan]){ tkbMap[lopHocPhan] = []; lopCount++; }
+      tkbMap[lopHocPhan].push(session);
+      count++;
+    }
+    tkbLoaded = true;
+    resultEl.className = 'file-result ok';
+    resultEl.textContent = '✓ Đã nạp ' + lopCount + ' lớp học phần (' + count + ' buổi học) từ "' + label + '"';
+    setChip('chip-tkb', true, lopCount + ' lớp học phần');
+  }catch(err){
+    tkbLoaded = false;
+    resultEl.className = 'file-result err';
+    resultEl.textContent = '✗ Lỗi đọc file: ' + err.message;
+    setChip('chip-tkb', false, 'lỗi');
+  }
+  updateSearchState();
+}
+
+// ---------------------------------------------------------------
+// Parse a "DS lớp HP" (attendance roster) workbook
+// ---------------------------------------------------------------
+function parseStudentWorkbook(wb){
+  let sheetsMatched = 0;
+  wb.SheetNames.forEach(sheetName=>{
+    const sheet = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:''});
+
+    // Khóa nối phải là "Lớp học phần:" (chuỗi đầy đủ, khớp chính xác với cột "Lớp học phần"
+    // trong file TKB tổng) — KHÔNG dùng "Mã học phần:" nữa, vì 1 Mã HP có thể ứng với
+    // nhiều lớp song song (khác GV/phòng) nên sẽ nối sai lớp nếu chỉ dựa vào Mã HP.
+    let lopHocPhan = '';
+    let headerIdx = -1;
+    for(let i=0;i<rows.length;i++){
+      const r = rows[i];
+      if(normHeader(r[0]) === 'Lớp học phần:'){
+        lopHocPhan = normHeader(r[2]);
+      }
+      if(normHeader(r[1]) === 'Mã sinh viên') headerIdx = i;
+    }
+    if(!lopHocPhan || headerIdx === -1) return;
+    sheetsMatched++;
+
+    for(let i=headerIdx+1;i<rows.length;i++){
+      const r = rows[i];
+      const mssv = normHeader(r[1]);
+      if(!mssv) continue;
+      const ho = normHeader(r[2]);
+      const ten = normHeader(r[3]);
+      const lop = normHeader(r[4]);
+      const hoTen = (ho + ' ' + ten).replace(/\s+/g,' ').trim();
+
+      if(!studentIndex[mssv]) studentIndex[mssv] = {hoTen:'', lop:'', lopHocPhans:new Set()};
+      if(hoTen) studentIndex[mssv].hoTen = hoTen;
+      if(lop) studentIndex[mssv].lop = lop;
+      studentIndex[mssv].lopHocPhans.add(lopHocPhan);
+    }
+  });
+  return sheetsMatched;
+}
+
+async function handleDsFiles(fileList){
+  const files = Array.from(fileList).filter(f => /\.(xls|xlsx)$/i.test(f.name));
+  const resultEl = document.getElementById('dsResult');
+  const progWrap = document.getElementById('dsProgress');
+  const progBar = document.getElementById('dsProgressBar');
+
+  if(files.length === 0){
+    resultEl.className = 'file-result err';
+    resultEl.textContent = '✗ Không tìm thấy file .xls/.xlsx nào trong lựa chọn.';
+    return;
+  }
+
+  progWrap.classList.add('on');
+  let ok = 0, failed = 0, sheetHitsTotal = 0;
+
+  for(let i=0;i<files.length;i++){
+    const file = files[i];
+    progBar.style.width = Math.round(((i+1)/files.length)*100) + '%';
+    resultEl.className = 'file-result';
+    resultEl.textContent = 'Đang xử lý ' + (i+1) + '/' + files.length + ': ' + file.name;
+    try{
+      const data = await readFileAsArrayBuffer(file);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const hits = parseStudentWorkbook(wb);
+      if(hits > 0){ ok++; sheetHitsTotal += hits; } else { failed++; }
+    }catch(err){
+      failed++;
+    }
+  }
+
+  progWrap.classList.remove('on');
+  progBar.style.width = '0%';
+  dsFileCount += ok;
+  dsSheetHits += sheetHitsTotal;
+  const studentCount = Object.keys(studentIndex).length;
+
+  resultEl.className = failed>0 ? 'file-result' : 'file-result ok';
+  resultEl.textContent = '✓ Đã đọc ' + ok + '/' + files.length + ' file ('+sheetHitsTotal+' lớp học phần)'
+    + (failed>0 ? ' — ' + failed + ' file bỏ qua (không đúng định dạng danh sách lớp)' : '')
+    + '. Tổng cộng ' + studentCount + ' sinh viên trong dữ liệu.';
+
+  setChip('chip-ds', studentCount>0, studentCount + ' sinh viên · ' + dsSheetHits + ' lớp');
+  updateSearchState();
+}
+
+// ---------------------------------------------------------------
+// Tự nạp dữ liệu có sẵn trong repo (thư mục /data), không cần bấm chọn file
+// - data/tkb.xls(x)                : file TKB tổng
+// - data/ds-lop/manifest.json     : mảng tên file, ví dụ ["ANH.xls","CE0.xls",...]
+// - data/ds-lop/<tên file>.xls    : từng file danh sách lớp học phần
+// Nếu fetch lỗi (chưa có file / mở trực tiếp bằng file:// không qua server) thì
+// im lặng bỏ qua, người dùng vẫn có thể nạp thủ công như trước.
+//
+// DATA_VERSION: mỗi lần bạn thay file trong /data (học kỳ mới, cập nhật TKB...),
+// hãy đổi chuỗi này (ví dụ "2026-08-24" hoặc tăng số lên "2") rồi push lại.
+// Đổi số này ép trình duyệt của người xem tải bản mới thay vì dùng bản cache cũ.
+// ---------------------------------------------------------------
+const DATA_VERSION = '1';
+
+async function autoLoadData(){
+  // 1) TKB tổng — thử lần lượt vài tên/đuôi phổ biến để không phải nhớ chính xác
+  //    (file gốc trường xuất ra thường là .xls, đổi tên/đuôi kiểu gì cũng chạy được).
+  const TKB_CANDIDATES = ['data/tkb.xls', 'data/tkb.xlsx', 'data/tkb.XLS', 'data/tkb.XLSX'];
+  for(const path of TKB_CANDIDATES){
+    try{
+      const res = await fetch(path + '?v=' + DATA_VERSION);
+      if(res.ok){
+        const buf = await res.arrayBuffer();
+        await loadTKBFromArrayBuffer(buf, path);
+        break; // nạp được rồi thì thôi, không thử tiếp
+      }
+    }catch(err){ /* thử tên tiếp theo */ }
+  }
+
+  // 2) Danh sách lớp học phần
+  try{
+    const manRes = await fetch('data/ds-lop/manifest.json?v=' + DATA_VERSION);
+    if(manRes.ok){
+      const names = await manRes.json();
+      const fakeFiles = [];
+      for(const name of names){
+        const r = await fetch('data/ds-lop/' + encodeURIComponent(name) + '?v=' + DATA_VERSION);
+        if(!r.ok) continue;
+        const buf = await r.arrayBuffer();
+        // Bọc lại thành đối tượng giống File để tái dùng nguyên hàm handleDsFiles
+        fakeFiles.push(new File([buf], name));
+      }
+      if(fakeFiles.length) await handleDsFiles(fakeFiles);
+    }
+  }catch(err){ /* chưa có manifest -> bỏ qua */ }
+}
+
+// ---------------------------------------------------------------
+// UI wiring
+// ---------------------------------------------------------------
+document.getElementById('tkbFile').addEventListener('change', handleTKBFile);
+document.getElementById('folderInput').addEventListener('change', e => handleDsFiles(e.target.files));
+document.getElementById('multiFileInput').addEventListener('change', e => handleDsFiles(e.target.files));
+
+document.getElementById('setupHead').addEventListener('click', ()=>{
+  document.getElementById('setupPanel').classList.toggle('open');
+});
+
+function updateSearchState(){
+  const btn = document.getElementById('searchBtn');
+  const note = document.getElementById('searchNote');
+  const studentCount = Object.keys(studentIndex).length;
+  const ready = tkbLoaded && studentCount > 0;
+  btn.disabled = !ready;
+  if(ready){
+    note.textContent = 'Sẵn sàng — đã có ' + Object.keys(tkbMap).length + ' lớp học phần và ' + studentCount + ' sinh viên.';
+    document.getElementById('setupPanel').classList.remove('open');
+    document.getElementById('setupHint').textContent = 'Đã nạp xong · bấm để nạp lại / thêm file';
+  }else{
+    note.textContent = 'Nạp đủ dữ liệu ở trên rồi mới tra cứu được.';
+  }
+}
+
+document.getElementById('searchForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const mssv = document.getElementById('mssvInput').value.trim();
+  if(!mssv) return;
+  renderResult(mssv);
+});
+
+// Điều hướng tuần — gắn 1 lần trên #result (nội dung bên trong bị vẽ lại mỗi lần đổi tuần)
+document.getElementById('result').addEventListener('click', e=>{
+  if(!lastMssv) return;
+  if(e.target.closest('#weekPrev')){
+    if(currentWeekIdx>0){ currentWeekIdx--; renderResult(lastMssv); }
+  }else if(e.target.closest('#weekNext')){
+    if(currentWeekIdx<WEEKS.length-1){ currentWeekIdx++; renderResult(lastMssv); }
+  }else if(e.target.closest('#weekToday')){
+    currentWeekIdx = defaultWeekIndex(); renderResult(lastMssv);
+  }
+});
+document.getElementById('result').addEventListener('change', e=>{
+  if(e.target.id === 'weekSelect' && lastMssv){
+    currentWeekIdx = Number(e.target.value);
+    renderResult(lastMssv);
+  }
+});
+
+// ---------------------------------------------------------------
+// Render result
+// ---------------------------------------------------------------
+function renderResult(mssv){
+  lastMssv = mssv;
+  const box = document.getElementById('result');
+  const student = studentIndex[mssv];
+
+  if(!student){
+    box.innerHTML = `<div class="msg-board">KHÔNG TÌM THẤY MSSV "${escapeHtml(mssv)}" TRONG DỮ LIỆU ĐÃ NẠP</div>`;
+    return;
+  }
+
+  // Khóa nối là "Lớp học phần" (chuỗi đầy đủ). Mỗi lớp có thể có NHIỀU buổi/tuần
+  // (nhiều dòng trong TKB) nên phải duyệt cả mảng, không chỉ lấy 1 dòng.
+  const lopList = Array.from(student.lopHocPhans);
+  const scheduledAll = [];  // tất cả các buổi có thu + tiết cố định, kể cả ngoài tuần đang xem
+  const flexible = [];      // không có lịch cố định (đồ án, thực tập...)
+  const missing = [];       // lớp học phần không khớp được với file TKB
+
+  lopList.forEach(lop=>{
+    const sessions = tkbMap[lop];
+    if(!sessions || !sessions.length){ missing.push(lop); return; }
+    sessions.forEach(c=>{
+      if(c.thu && c.tietStart){ scheduledAll.push(c); }
+      else{ flexible.push(c); }
+    });
+  });
+
+  const week = WEEKS[currentWeekIdx];
+  // Chỉ giữ các buổi mà khoảng [Ngày BĐ, Ngày KT] của nó có giao với tuần đang xem
+  const scheduled = scheduledAll.filter(c=>{
+    if(!c.ngayBD_raw && !c.ngayKT_raw) return true; // thiếu ngày -> vẫn hiển thị, không lọc bỏ
+    const from = c.ngayBD_raw || week.start;
+    const to = c.ngayKT_raw || week.end;
+    return from <= week.end && to >= week.start;
+  });
+
+  subjectColorMap = new Map(); // gán màu lại theo thứ tự môn xuất hiện của SV này
+
+  scheduled.sort((a,b)=> (a.thu - b.thu) || (a.tietStart - b.tietStart));
+  const byDay = {};
+  scheduled.forEach(c=>{
+    (byDay[c.thu] = byDay[c.thu] || []).push(c);
+    colorForSubject(c.tenMon || c.lopHocPhan); // đảm bảo môn nào cũng có màu, kể cả khi vẽ lưới
+  });
+
+  let html = '';
+
+  html += `<div class="student-card">
+    <div>
+      <div class="name">${escapeHtml(student.hoTen || '(chưa rõ họ tên)')}</div>
+      <div class="meta">MSSV ${escapeHtml(mssv)}${student.lop ? ' · Lớp ' + escapeHtml(student.lop) : ''}</div>
+    </div>
+    <div class="count"><b>${lopList.length}</b><span>Học phần</span></div>
+  </div>`;
+
+  if(scheduledAll.length === 0 && flexible.length === 0){
+    html += `<div class="empty-msg">Sinh viên có trong dữ liệu nhưng chưa khớp được lớp học phần nào với file TKB.</div>`;
+  }
+
+  if(scheduledAll.length){
+    html += `<div class="flex-title" style="margin-top:22px;">📅 Lịch tuần</div>`;
+    html += renderWeekNav();
+    if(scheduled.length){
+      html += renderWeekGrid(byDay, week);
+      html += renderLegend();
+    }else{
+      html += `<div class="empty-msg">Không có lớp nào diễn ra trong tuần này.</div>`;
+    }
+  }
+
+  if(flexible.length){
+    html += `<div class="flex-section"><div class="flex-title">🧩 Không có lịch cố định (đồ án / thực tập...)</div>`;
+    flexible.forEach(c=>{
+      html += `<div class="flex-row">
+        <div class="left"><b>${escapeHtml(c.tenMon || c.lopHocPhan)}</b><span class="mono">${escapeHtml(c.maHP)}${c.gv ? ' · '+escapeHtml(c.gv) : ''}</span></div>
+        <div class="right">${escapeHtml(c.ngayBD)} → ${escapeHtml(c.ngayKT)}</div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if(missing.length){
+    html += `<div class="flex-section"><div class="flex-title">❌ Không tìm thấy trong TKB (kiểm tra lại "Lớp học phần" có khớp đúng chính tả không)</div>`;
+    missing.forEach(lop=>{
+      html += `<div class="flex-row"><div class="left"><b class="mono">${escapeHtml(lop)}</b></div><div class="right">kiểm tra lại file TKB</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Danh sách đầy đủ các học phần đã đăng ký — TOÀN học kỳ, không lọc theo tuần đang xem ở trên.
+  if(scheduledAll.length){
+    html += renderRegisteredList(scheduledAll);
+  }
+
+  box.innerHTML = html;
+}
+
+// ---------------------------------------------------------------
+// Danh sách "Học phần đã đăng ký" — gom theo Thứ, hiển thị TẤT CẢ buổi học
+// trong suốt học kỳ (khác với lưới tuần ở trên chỉ hiện đúng tuần đang chọn).
+// ---------------------------------------------------------------
+function renderRegisteredList(scheduledAll){
+  const byDay = {};
+  scheduledAll.forEach(c=>{ (byDay[c.thu] = byDay[c.thu] || []).push(c); });
+  Object.keys(byDay).forEach(thu=>{
+    byDay[thu].sort((a,b)=> a.tietStart - b.tietStart);
+  });
+
+  let html = `<div class="flex-section">
+    <div class="flex-title">📚 Học phần đã đăng ký · cả học kỳ (${scheduledAll.length} buổi/tuần)</div>`;
+  DAY_ORDER.forEach(thu=>{
+    if(!byDay[thu] || !byDay[thu].length) return;
+    html += `<div class="day-group"><div class="day-label">${THU_LABEL[thu]}</div>`;
+    byDay[thu].forEach((c, i)=>{ html += courseRow(c, i); });
+    html += `</div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function courseRow(c, delayIndex){
+  const period = (c.tietStart===c.tietEnd) ? c.tietStart : (c.tietStart + '–' + c.tietEnd);
+  const color = colorForSubject(c.tenMon || c.lopHocPhan);
+  return `<div class="board-row" style="animation-delay:${Math.min(delayIndex*45,400)}ms; border-left:3px solid ${color};">
+    <div class="period">${escapeHtml(String(period))}<small>TIẾT</small></div>
+    <div>
+      <div class="course-name">${escapeHtml(c.tenMon || c.lopHocPhan)}</div>
+      <div class="course-sub">
+        <span class="mono">${escapeHtml(c.maHP)}</span>
+        ${c.gv ? '<span>· '+escapeHtml(c.gv)+'</span>' : ''}
+        ${c.soTC!=='' && c.soTC!=null ? '<span>· '+escapeHtml(String(c.soTC))+' TC</span>' : ''}
+        <span>· ${escapeHtml(c.ngayBD)} → ${escapeHtml(c.ngayKT)}</span>
+      </div>
+    </div>
+    <div class="room-badge">${escapeHtml(c.phong || '—')}</div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------
+// Lưới TKB theo tuần — mỗi môn 1 màu, khối kéo dài theo số tiết
+// ---------------------------------------------------------------
+function layoutDay(sessions){
+  // Xếp làn (lane) cho các buổi bị trùng tiết trong cùng 1 ngày, để không đè lên nhau.
+  const list = sessions.slice().sort((a,b)=>a.tietStart-b.tietStart);
+  const active = [];
+  list.forEach(s=>{
+    for(let i=active.length-1;i>=0;i--){ if(active[i].end < s.tietStart) active.splice(i,1); }
+    const used = active.map(a=>a.lane);
+    let lane = 0; while(used.includes(lane)) lane++;
+    s._lane = lane;
+    active.push({end:s.tietEnd, lane});
+  });
+  const maxLane = list.reduce((m,s)=>Math.max(m,s._lane), 0) + 1;
+  list.forEach(s=> s._lanes = maxLane);
+  return list;
+}
+
+function dayOffset(thu){ return thu===8 ? 6 : (thu-2); }
+function dateForThu(week, thu){
+  const d = new Date(week.start);
+  d.setDate(d.getDate() + dayOffset(thu));
+  return d;
+}
+
+function renderWeekNav(){
+  const week = WEEKS[currentWeekIdx];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const isCurrent = today >= week.start && today <= week.end;
+  let opts = '';
+  WEEKS.forEach((w,i)=>{
+    opts += `<option value="${i}" ${i===currentWeekIdx?'selected':''}>${escapeHtml(weekLabel(w))}</option>`;
+  });
+  return `<div class="week-nav">
+    <select id="weekSelect" class="mono">${opts}</select>
+    <button type="button" id="weekPrev" ${currentWeekIdx<=0?'disabled':''} title="Tuần trước">←</button>
+    <button type="button" id="weekToday" class="${isCurrent?'active':''}">Tuần hiện tại</button>
+    <button type="button" id="weekNext" ${currentWeekIdx>=WEEKS.length-1?'disabled':''} title="Tuần sau">→</button>
+  </div>`;
+}
+
+function renderWeekGrid(byDay, week){
+  let timeCol = `<div class="week-timecol">`;
+  for(let t=1;t<=14;t++){
+    timeCol += `<div class="week-timecell"><b>Tiết ${t}</b>${TIET_TIME[t][0]}</div>`;
+  }
+  timeCol += `</div>`;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  let dayCols = '';
+  DAY_ORDER.forEach(thu=>{
+    const sessions = layoutDay(byDay[thu] || []);
+    let inner = '';
+    for(let t=1;t<14;t++){ inner += `<div class="gridline" style="top:${t*ROW_H}px"></div>`; }
+    sessions.forEach(c=>{
+      const top = (c.tietStart-1)*ROW_H + 2;
+      const height = (c.tietEnd - c.tietStart + 1)*ROW_H - 4;
+      const width = 100/c._lanes;
+      const left = c._lane*width;
+      const color = colorForSubject(c.tenMon || c.lopHocPhan);
+      const periodStr = (c.tietStart===c.tietEnd) ? ('Tiết '+c.tietStart) : ('Tiết '+c.tietStart+'–'+c.tietEnd);
+      inner += `<div class="course-block" title="${escapeHtml(c.tenMon || c.lopHocPhan)} · ${escapeHtml(c.phong||'')} · ${escapeHtml(c.gv||'')}"
+        style="top:${top}px; height:${height}px; left:calc(${left}% + 2px); width:calc(${width}% - 4px); background:${color};">
+        <span class="cb-name">${escapeHtml(c.tenMon || c.lopHocPhan)}</span>
+        <span class="cb-meta">${escapeHtml(periodStr)} · ${escapeHtml(c.phong || '—')}</span>
+      </div>`;
+    });
+    dayCols += `<div class="week-daycol">${inner}</div>`;
+  });
+
+  let head = `<div class="week-corner"></div>`;
+  DAY_ORDER.forEach(thu=>{
+    const d = dateForThu(week, thu);
+    const isToday = d.getTime()===today.getTime();
+    head += `<div class="week-daycell${isToday?' today':''}"><b>${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</b><span class="wd">${THU_LABEL[thu]}</span></div>`;
+  });
+
+  return `<div class="week-wrap"><div class="week-grid">
+    ${head}
+    ${timeCol}
+    ${dayCols}
+  </div></div>`;
+}
+
+function renderLegend(){
+  let html = `<div class="legend">`;
+  subjectColorMap.forEach((color, name)=>{
+    html += `<div class="legend-item"><span class="legend-swatch" style="background:${color}"></span>${escapeHtml(name)}</div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+updateSearchState();
+autoLoadData();
+</script>
+</body>
+</html>
